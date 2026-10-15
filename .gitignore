@@ -1,0 +1,16 @@
+data/
+__pycache__/
+*.pyc
+frontend/node_modules/
+frontend/dist/
+.venv/
+
+# Optional datasets (and any optional plugins) stay on this machine: the repo ships one default dataset
+# per problem type; extras live in user_plugins/<kind>/optional/ and can be removed from the dashboard
+user_plugins/*/optional/
+user_plugins/.trash/
+# machine-specific: absolute paths to your own project folders (Library -> Custom models -> linked folders)
+user_plugins/linked.json
+
+# Claude Code personal/local settings
+.claude/settings.local.json
