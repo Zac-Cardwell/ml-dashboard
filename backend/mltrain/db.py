@@ -198,6 +198,27 @@ CREATE TABLE IF NOT EXISTS automation_runs (
     challenger_session_id TEXT, champion_session_id TEXT, challenger_version_id TEXT,
     decision TEXT, message TEXT, data TEXT DEFAULT '{}'
 );
+-- Data Studio: versioned tabular datasets with lineage (materialized as Parquet under data/studio/)
+CREATE TABLE IF NOT EXISTS studio_datasets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,                   -- SQL table name
+    kind TEXT NOT NULL,                          -- source | derived | query
+    parent_id TEXT,                              -- derived: the dataset the recipe starts from
+    origin TEXT DEFAULT '{}',                    -- source datasets: where the rows come from (JSON)
+    recipe TEXT DEFAULT '[]',                    -- derived: transformation steps (JSON)
+    query TEXT,                                  -- query: SQL over other Studio tables
+    target TEXT, task TEXT,                      -- modeling metadata (optional)
+    description TEXT DEFAULT '', tags TEXT DEFAULT '[]',
+    version INTEGER NOT NULL DEFAULT 0,          -- bumped on every successful build
+    status TEXT NOT NULL DEFAULT 'new',          -- new | building | ready | error
+    error TEXT, build TEXT DEFAULT '{}',          -- build metadata: rows, columns, schema, bytes, parent versions, fitted stats
+    created_at REAL NOT NULL, updated_at REAL NOT NULL, built_at REAL
+);
+CREATE TABLE IF NOT EXISTS studio_queries (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL, sql TEXT NOT NULL,
+    created_at REAL NOT NULL, updated_at REAL NOT NULL
+);
 """
 
 # Columns added after the first release; applied with ALTER TABLE when missing.
@@ -220,7 +241,7 @@ MIGRATIONS = {
     },
 }
 
-JSON_FIELDS = {"problem_params", "model_params", "seeds", "tags", "env_info", "summary", "data", "options", "init_from",
+JSON_FIELDS = {"origin", "recipe", "build", "problem_params", "model_params", "seeds", "tags", "env_info", "summary", "data", "options", "init_from",
                "group_params", "metrics", "config", "params", "template", "cadence", "automation", "health_reasons", "features", "payload", "prediction", "label"}
 
 

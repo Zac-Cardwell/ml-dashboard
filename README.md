@@ -27,7 +27,7 @@ and Node ≥ 20 for building the frontend. Recreate the env with:
 conda create -n mltrain python=3.12 && conda activate mltrain
 pip install torch torchvision "fastapi[standard]" scikit-learn pandas "stable-baselines3[extra]" "gymnasium[box2d]" \
     transformers datasets evaluate sacrebleu rouge-score accelerate sentencepiece python-multipart itsdangerous psutil pyyaml \
-    sb3-contrib xgboost lightgbm "imageio[ffmpeg]" opencv-python mcp optuna "psycopg[binary]" pymysql
+    sb3-contrib xgboost lightgbm "imageio[ffmpeg]" opencv-python mcp optuna "psycopg[binary]" pymysql duckdb pyarrow
 ```
 
 ### Keep it running (optional, systemd user service)
@@ -119,6 +119,69 @@ RL sessions also offer a **live view** (frames from the training env streamed to
 - Secrets can go in `data/cloud.env` (`KEY=value` lines, git-ignored, never displayed) and be referenced in SQL URLs as `${KEY}`. They're expanded only when connecting, and error messages are redacted.
 
 The drivers come from the training environment: `s3fs`, `gcsfs`, `adlfs`, `azure-identity`, `sqlalchemy-bigquery`, `pyathena`, `pymssql`.
+
+## Data Studio (EDA, cleaning, feature engineering, SQL, subsets)
+
+**Studio** in the top bar is a workspace for tabular data. It's built on DuckDB over versioned Parquet files, so
+everything runs out-of-core. Datasets of ~10M rows are comfortable, and larger ones work too: queries spill to
+`data/studio/tmp` (memory limit 24 GB). Interactive model fitting uses samples.
+
+**Datasets come in three kinds**, shown as a tree in the sidebar:
+
+| Kind | What it is |
+|---|---|
+| source | An import from one of: a dashboard dataset, a CSV / Parquet file or folder (local, or `s3://` `gs://` `az://`), an upload, a live source window, a database query, or the dashboard's own sessions / runs / metrics tables. |
+| derived | A *recipe* of steps applied to a parent dataset. |
+| query | A SQL `SELECT` over other datasets, referenced by their slug. |
+
+Every build is a new version (the last 5 are kept). Children of a dataset show as **stale** when it changes.
+
+**Per dataset:**
+- **Profile** — per-column statistics computed over all rows:
+  - distributions, missingness and how gaps co-occur, duplicates
+  - Pearson and Spearman correlations
+  - mutual information with the target, class balance, rows over time
+  - alerts: constant, ID-like, high cardinality, skew, outliers, numbers stored as text, imbalance, possible target leakage, collinearity
+- **Data** — a paged grid with sorting and SQL `WHERE` filters.
+- **Recipe** (derived) — steps with a live preview on a sample:
+  - rows: filter, dedupe, drop missing, sample, sort
+  - columns: select, drop, rename, cast, formula, date parts, text, math, bin
+  - cleaning: impute, clip outliers, scale, one-hot
+  - combine: join, union, group-by, window/lag features
+  - split
+  - features: PCA, feature selection, cluster labels, anomaly scores
+  - raw SQL
+- **Charts** — histogram, ECDF, box, bar, scatter, line and heatmap. Any number of other datasets can be overlaid as extra series.
+- **Explore** — KMeans, GMM, HDBSCAN, DBSCAN and agglomerative clustering:
+  - silhouette, Davies–Bouldin and Calinski–Harabasz scores, a k sweep, cluster profiles, agreement with the target
+  - Isolation Forest and LOF anomaly detection
+  - PCA and t-SNE maps
+  - **Save** turns a result into a derived dataset, or keeps one cluster (or only the anomalies) as a subset.
+- **Lineage** — upstream and downstream datasets, and the training sessions that used the dataset.
+- **Train model** opens New training with `studio.<slug>`.
+  - With a target, the usual supervised models are offered. Without one, the unsupervised models are: KMeans, GMM, HDBSCAN, Isolation Forest, LOF and PCA.
+  - If the dataset has a `__split` column, the trainer uses that split.
+
+**SQL editor.** Every built dataset is a table, and `dashboard_sessions` / `dashboard_runs` / `dashboard_metrics` are available too. It has:
+- a schema browser
+- saved queries and per-browser history
+- a quick chart of the result
+- **Save result as dataset**, which turns the query into a versioned query dataset
+
+Queries run in a sandbox: read-only, one statement at a time, no file or network access, and a time limit.
+
+**Compare subsets.** Pick datasets (the first is the reference) and a column. You get:
+- one overlaid plot on shared bins, normalized to shares
+- n, mean ± 95% CI, median and IQR
+- Welch t-test, KS test and Cohen's d for numeric columns
+- χ² test and Cramér's V for categorical columns
+- a warning when a column was scaled or transformed differently upstream in the compared datasets
+
+**Best-practice rules the Studio enforces:**
+- **No train/test leakage.** Steps that learn statistics (impute, clip, scale, one-hot, bin, PCA, feature selection, clustering, anomaly) fit on `__split = 'train'` rows when a **Split** step comes earlier. Otherwise the build carries a leakage warning. Put the split first in modeling recipes.
+- **Fitted statistics are stored with each version**, so a build is reproducible. Every training run logs the dataset version it used.
+- **t-SNE is for looking only.** It can't transform new rows, so use a PCA step for feature reduction.
+- **With large samples nearly every difference is significant.** The comparison view shows effect sizes next to p-values. Overlapping subsets (one containing the other) break the tests' independence assumption.
 
 ## Notifications, explainability, smart search, queue & power
 
@@ -408,6 +471,8 @@ backend/mltrain/
   mlops/              registry, predictors, profiles, monitoring, serving, automation, export, demo + simulator
   preprocessing.py    fitted, serializable tabular preprocessing (the serving contract)
   data/               connectors, profiling, static reports, live sources, schedules, demo stream
+  studio/             Data Studio: DuckDB engine, catalog/builds, recipe steps, EDA, charts, exploration
+  api/studio.py       Data Studio endpoints (datasets, preview, profile, chart, compare, explore, SQL, lineage)
   api/data.py         data sources, quality reports, schedules endpoints
   sdk/                mltrain_client.py — client SDK for apps and external deployments
   scheduler.py        GPU/CPU-limited job queue, launches worker processes

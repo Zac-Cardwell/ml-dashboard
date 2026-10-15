@@ -27,6 +27,9 @@ AUTO_METRIC = {  # task -> (objective metric, direction, curve used for pruning)
     "rl": ("final/mean_reward", "maximize", "eval/mean_reward"),
     "seq2seq": ("val/bleu", "maximize", "val/bleu"),
     "generation": ("val/loss", "minimize", "val/loss"),
+    "clustering": ("val/silhouette", "maximize", "val/silhouette"),
+    "anomaly_detection": ("val/auc", "maximize", "val/auc"),
+    "dimensionality_reduction": ("val/reconstruction_rmse", "minimize", "val/reconstruction_rmse"),
 }
 
 

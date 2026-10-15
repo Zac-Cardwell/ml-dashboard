@@ -46,6 +46,8 @@ def register_version(model_name: str, session_id: str, run_id: str | None = None
         sess = db.one(c, "SELECT * FROM sessions WHERE id=?", (session_id,))
         if not sess:
             raise HTTPException(404, "session not found")
+        if sess.get("task") in ("clustering", "anomaly_detection", "dimensionality_reduction", "generation"):
+            raise HTTPException(400, f"The registry serves supervised models; {sess['task'].replace('_', ' ')} models can't be registered yet")
         run = db.one(c, "SELECT * FROM runs WHERE id=? AND session_id=?", (run_id, session_id)) if run_id else best_run(c, session_id)
         if not run or not storage.model_meta(run["id"], variant):
             raise HTTPException(400, "That run has no saved final-epoch model" if variant == "final" else "That run has no saved model")

@@ -14,6 +14,7 @@ import NewSession from './pages/NewSession'
 import SessionDetail from './pages/SessionDetail'
 import Sessions from './pages/Sessions'
 import Settings from './pages/Settings'
+import Studio from './studio/Studio'
 
 type PluginCtx = { plugins: Plugins | undefined; reload: () => Promise<void> }
 const PluginsContext = createContext<PluginCtx>({ plugins: undefined, reload: async () => {} })
@@ -48,6 +49,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
               <NavLink to="/new?mode=evaluate" className={() => (location.search.includes('mode=evaluate') ? 'active' : '')}>Evaluate</NavLink>
               <NavLink to="/compare">Compare</NavLink>
               <NavLink to="/data">Data</NavLink>
+              <NavLink to="/studio">Studio</NavLink>
               <NavLink to="/registry">Registry</NavLink>
               <NavLink to="/deployments">Deployments</NavLink>
               <NavLink to="/library">Library</NavLink>
@@ -65,6 +67,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
               <Route path="/compare" element={<Compare />} />
               <Route path="/data" element={<Data />} />
               <Route path="/data/sources/:id" element={<SourceDetail />} />
+              <Route path="/studio/*" element={<Studio />} />
               <Route path="/registry" element={<Registry />} />
               <Route path="/deployments" element={<Deployments />} />
               <Route path="/deployments/:id" element={<DeploymentDetail />} />

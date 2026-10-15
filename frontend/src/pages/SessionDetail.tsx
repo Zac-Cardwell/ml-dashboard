@@ -1,3 +1,4 @@
+import { EmbeddingPlot } from '../studio/viz'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -566,6 +567,7 @@ function ArtifactsTab({ id, runSig }: { id: string; runSig: string }) {
             </div>
             <div className="card-pad">
               {one.kind === 'confusion_matrix' ? <Heatmap labels={data.labels} matrix={data.matrix} />
+                : one.kind === 'scatter' ? <EmbeddingPlot x={data.x} y={data.y} label={data.label} title={data.title} />
                 : one.kind === 'table' ? (
                   <div className="table-wrap" style={{ maxHeight: 480 }}>
                     <table>

@@ -17,7 +17,10 @@ HEADLINE = {  # task -> (metric, higher_is_better)   (same as the dashboard)
     "generation": ("test/fid", False),
 }
 # tasks whose headline depends on what was measured (images: FID; text: perplexity; otherwise test loss)
-HEADLINE_FALLBACK = {"generation": [("test/fid", False), ("test/perplexity", False), ("test/loss", False)]}
+HEADLINE_FALLBACK = {"generation": [("test/fid", False), ("test/perplexity", False), ("test/loss", False)],
+                     "clustering": [("test/silhouette", True), ("test/ari", True)],
+                     "anomaly_detection": [("test/auc", True), ("test/average_precision", True)],
+                     "dimensionality_reduction": [("test/explained_variance", True), ("test/reconstruction_rmse", False)]}
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
 INK, MUTED, GRID = "#1f2328", "#59636e", "#e6e8eb"
 SPLIT_ORDER = {"train": 0, "rollout": 0, "val": 1, "eval": 1, "test": 2}

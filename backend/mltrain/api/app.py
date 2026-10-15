@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from .. import config, db
 from ..plugins.registry import KIND_DIR, get_registry
 from . import data as data_api
-from . import experiments, exports, insights, llm, mlops, modelinfo, sessions
+from . import experiments, exports, insights, llm, mlops, modelinfo, sessions, studio
 from ..mlops.service import MLOPS
 from .auth import COOKIE, MAX_AGE
 from .network import NetworkGuard
@@ -287,6 +287,7 @@ app.include_router(insights.router)
 app.include_router(data_api.router)
 app.include_router(exports.router)
 app.include_router(modelinfo.router)
+app.include_router(studio.router)
 app.include_router(mlops.serve)
 sessions.register_ws(app, GUARD)
 

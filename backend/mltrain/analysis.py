@@ -19,7 +19,10 @@ HEADLINE = {  # task -> (metric, higher_is_better)
     "generation": ("test/fid", False),
 }
 # tasks whose headline depends on what was measured (images: FID; text: perplexity; otherwise test loss)
-HEADLINE_FALLBACK = {"generation": [("test/fid", False), ("test/perplexity", False), ("test/loss", False)]}
+HEADLINE_FALLBACK = {"generation": [("test/fid", False), ("test/perplexity", False), ("test/loss", False)],
+                     "clustering": [("test/silhouette", True), ("test/ari", True)],
+                     "anomaly_detection": [("test/auc", True), ("test/average_precision", True)],
+                     "dimensionality_reduction": [("test/explained_variance", True), ("test/reconstruction_rmse", False)]}
 
 
 def session_status(runs: list[dict]) -> str:

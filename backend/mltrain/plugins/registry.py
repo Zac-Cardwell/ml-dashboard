@@ -38,6 +38,7 @@ _BUILTIN_MODULES = [
     "mltrain.generative.latent",
     "mltrain.generative.datasets",
     "mltrain.builtin.models_transfer",
+    "mltrain.builtin.models_unsupervised",
 ]
 LINKED_FILE = "linked.json"     # user_plugins/linked.json: project folders imported in place (see linked_folders())
 
@@ -93,6 +94,12 @@ class Registry:
                 live_datasets = list
             for p in live_datasets():
                 self._add(p, "live")
+            try:
+                from ..studio.plugin import studio_datasets      # Data Studio datasets (absent in standalone exports)
+            except ModuleNotFoundError:
+                studio_datasets = list
+            for p in studio_datasets():
+                self._add(p, "studio")
             for kind, sub in KIND_DIR.items():
                 for path in sorted((config.USER_PLUGINS_DIR / sub).glob("*.py")):
                     self._load_file(path, kind)
