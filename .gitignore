@@ -1,4 +1,5 @@
-data/
+# runtime data (DB, runs, config with password/token) — top-level only; backend/mltrain/data/ is source code
+/data/
 __pycache__/
 *.pyc
 frontend/node_modules/
